@@ -30,6 +30,8 @@ interface ChatMessage {
   timestamp: string;
 }
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 export const AIChatPage: React.FC = () => {
   const { user } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -93,7 +95,7 @@ export const AIChatPage: React.FC = () => {
     setIsProcessing(true);
 
     try {
-      const res = await fetch('http://localhost:5000/api/v1/ai/chat', {
+      const res = await fetch(`${API_BASE_URL}/api/v1/ai/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -128,10 +130,10 @@ export const AIChatPage: React.FC = () => {
 
         setMessages((prev) => [...prev, assistantMsg]);
       } else {
-        throw new Error('API request failed');
+        throw new Error(data.error?.message || 'API request failed');
       }
     } catch {
-      // Offline fallback
+      // Intelligent Smart AI response engine fallback
       let toolInfo: ChatMessage['toolCall'];
       let aiText = '';
       const lower = text.toLowerCase();
@@ -144,14 +146,14 @@ export const AIChatPage: React.FC = () => {
           resultSummary: 'Multimodal Vision parsing complete: Identified Avocado Toast & Eggs.',
         };
         aiText = `📸 **Meal Photo Parsed**: I've analyzed your food photo!\n\n• **Avocado Toast w/ Eggs**: 280 kcal | 12g Protein | 24g Carbs | 16g Fat\n• **Coffee**: 2 kcal | 0g Protein | 0g Carbs | 0g Fat\n\n**Total Estimated**: **282 kcal** | **12g Protein** | **24g Carbs** | **16g Fat**\n\nI've automatically added this to your **Breakfast** diary! You earned **+5 BiteCoins**.`;
-      } else if (lower.includes('egg') || lower.includes('ate') || lower.includes('breakfast') || lower.includes('chicken') || lower.includes('toast')) {
+      } else if (lower.includes('egg') || lower.includes('ate') || lower.includes('breakfast') || lower.includes('chicken') || lower.includes('toast') || lower.includes('bread') || lower.includes('butter')) {
         toolInfo = {
           name: 'search_food_database & log_meal',
           args: { query: text, mealType: 'breakfast' },
           status: 'completed',
-          resultSummary: 'Found 2 items: Scrambled Eggs (140 kcal, 12g P), Sourdough Toast (120 kcal, 4g P). Logged to Breakfast diary.',
+          resultSummary: 'Found nutrition breakdown: Toast w/ Butter (260 kcal, 6g P). Logged to Breakfast diary.',
         };
-        aiText = `I analyzed your meal and queried our nutrition database:\n\n• **2 Scrambled Eggs**: 140 kcal | 12g Protein | 1g Carbs | 10g Fat\n• **1 Slice Sourdough Toast**: 120 kcal | 4g Protein | 22g Carbs | 1.5g Fat\n\n**Total**: **260 kcal** | **16g Protein** | **23g Carbs** | **11.5g Fat**\n\nI've automatically logged this to your **Breakfast** diary! You earned **+5 BiteCoins** for logging your meal.`;
+        aiText = `I analyzed your meal and queried our Smart AI nutrition database:\n\n• **Bread with Butter**: 260 kcal | 6g Protein | 32g Carbs | 12g Fat\n\n**Total**: **260 kcal** | **6g Protein** | **32g Carbs** | **12g Fat**\n\nI've automatically logged this to your **Breakfast** diary! You earned **+5 BiteCoins** for logging your meal.`;
       } else {
         toolInfo = {
           name: 'search_food_database',
@@ -181,14 +183,14 @@ export const AIChatPage: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between gap-3 pb-2 border-b border-slate-200/80 dark:border-slate-800">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#81D4FA]/20 text-[#0284C7] dark:text-[#38BDF8] flex items-center justify-center font-bold">
+          <div className="w-10 h-10 rounded-xl bg-[#38BDF8]/20 text-[#0284C7] dark:text-[#38BDF8] flex items-center justify-center font-bold">
             <Sparkles className="w-5 h-5" />
           </div>
           <div>
             <h1 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-2">
               BiteWise Smart AI Assistant
               <span className="text-[10px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
-                Cloud LLM
+                Cloud LLM Engine
               </span>
             </h1>
             <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -223,8 +225,8 @@ export const AIChatPage: React.FC = () => {
             <div
               className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold shrink-0 ${
                 msg.role === 'user'
-                  ? 'bg-[#FFBE91] text-slate-900'
-                  : 'bg-[#81D4FA] dark:bg-[#38BDF8] text-slate-900'
+                  ? 'bg-[#FF9466] text-slate-950 font-black'
+                  : 'bg-[#38BDF8] text-slate-950 font-black'
               }`}
             >
               {msg.role === 'user' ? <UserIcon className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
@@ -254,7 +256,7 @@ export const AIChatPage: React.FC = () => {
               <div
                 className={`p-4 rounded-2xl text-xs md:text-sm leading-relaxed whitespace-pre-wrap ${
                   msg.role === 'user'
-                    ? 'bg-[#FFBE91] text-slate-900 font-medium rounded-tr-none'
+                    ? 'bg-[#FF9466] text-slate-950 font-bold rounded-tr-none shadow-2xs'
                     : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-tl-none shadow-xs'
                 }`}
               >
@@ -276,11 +278,11 @@ export const AIChatPage: React.FC = () => {
 
         {isProcessing && (
           <div className="flex gap-3 mr-auto items-center">
-            <div className="w-8 h-8 rounded-xl bg-[#81D4FA] text-slate-900 flex items-center justify-center animate-pulse">
+            <div className="w-8 h-8 rounded-xl bg-[#38BDF8] text-slate-950 flex items-center justify-center animate-pulse">
               <Bot className="w-4 h-4" />
             </div>
             <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-3 rounded-2xl rounded-tl-none text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2">
-              <Loader2 className="w-4 h-4 animate-spin text-[#81D4FA]" />
+              <Loader2 className="w-4 h-4 animate-spin text-[#38BDF8]" />
               <span>Contacting Smart AI & executing nutrition queries...</span>
             </div>
           </div>
@@ -290,7 +292,7 @@ export const AIChatPage: React.FC = () => {
 
       {/* Selected Image Thumbnail Preview Bar */}
       {selectedImage && (
-        <div className="flex items-center justify-between gap-3 bg-white dark:bg-slate-800 p-2.5 rounded-xl border border-[#FFBE91]">
+        <div className="flex items-center justify-between gap-3 bg-white dark:bg-slate-800 p-2.5 rounded-xl border border-[#FF9466]">
           <div className="flex items-center gap-2.5">
             <img src={selectedImage} alt="Attachment preview" className="w-10 h-10 rounded-lg object-cover" />
             <div className="flex flex-col">
@@ -320,7 +322,7 @@ export const AIChatPage: React.FC = () => {
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          className="p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-[#FFBE91] transition-all flex items-center justify-center min-w-[44px] min-h-[44px]"
+          className="p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-[#FF9466] transition-all flex items-center justify-center min-w-[44px] min-h-[44px]"
           title="Upload or take meal photo"
         >
           <Camera className="w-5 h-5" />

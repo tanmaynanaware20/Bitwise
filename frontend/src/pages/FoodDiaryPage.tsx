@@ -37,6 +37,8 @@ interface MealEntryItem {
   source: string;
 }
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 export const FoodDiaryPage: React.FC = () => {
   const { user } = useAuth();
   const [activeMealType, setActiveMealType] = useState<'breakfast' | 'lunch' | 'dinner' | 'snack'>('breakfast');
@@ -145,7 +147,7 @@ export const FoodDiaryPage: React.FC = () => {
     setPortionUnit(detectedUnit);
 
     try {
-      const res = await fetch('http://localhost:5000/api/v1/ai/chat', {
+      const res = await fetch(`${API_BASE_URL}/api/v1/ai/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
