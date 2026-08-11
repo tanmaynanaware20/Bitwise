@@ -1,0 +1,182 @@
+// BiteWise Prisma Database Schema
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum ThemePreference {
+  light
+  dark
+  system
+}
+
+enum TransactionType {
+  EARN_MEAL_LOG
+  EARN_STREAK_BONUS
+  EARN_REFERRAL_BONUS
+  EARN_CHALLENGE
+  EARN_MILESTONE
+  REDEEM_REWARD
+  ADMIN_ADJUSTMENT
+}
+
+enum LedgerStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+
+enum MealType {
+  breakfast
+  lunch
+  dinner
+  snack
+}
+
+enum LoggedVia {
+  ai_text
+  ai_photo
+  barcode
+  manual
+}
+
+enum ReferralStatus {
+  PENDING
+  VERIFIED
+  FLAGGED
+  EXPIRED
+}
+
+model User {
+  id                 String          @id @default(uuid())
+  authId             String          @unique @map("auth_id")
+  email              String          @unique
+  fullName           String?         @map("full_name")
+  referralCode       String          @unique @map("referral_code")
+  referredById       String?         @map("referred_by_id")
+  referredBy         User?           @relation("UserReferrals", fields: [referredById], references: [id], onDelete: SetNull)
+  referralsMade      User[]          @relation("UserReferrals")
+  bitecoinBalance    Int             @default(0) @map("bitecoin_balance")
+  dietaryPreferences Json            @default("{\"vegan\": false, \"keto\": false, \"allergies\": []}") @map("dietary_preferences")
+  macroTargets       Json            @default("{\"daily_calories\": 2000, \"protein_g\": 150, \"carbs_g\": 200, \"fat_g\": 65}") @map("macro_targets")
+  themePreference    ThemePreference @default(system) @map("theme_preference")
+  createdAt          DateTime        @default(now()) @map("created_at")
+  updatedAt          DateTime        @updatedAt @map("updated_at")
+
+  meals           Meal[]
+  bitecoinLedger  BitecoinLedger[]
+  referrerRecords Referral[]       @relation("ReferrerRelation")
+  refereeRecord   Referral?        @relation("RefereeRelation")
+  userRewards     UserReward[]
+
+  @@map("users")
+}
+
+model Meal {
+  id            String     @id @default(uuid())
+  userId        String     @map("user_id")
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mealType      MealType   @map("meal_type")
+  loggedAt      DateTime   @default(now()) @map("logged_at")
+  totalCalories Float      @default(0.0) @map("total_calories")
+  totalProteinG Float      @default(0.0) @map("total_protein_g")
+  totalCarbsG   Float      @default(0.0) @map("total_carbs_g")
+  totalFatG     Float      @default(0.0) @map("total_fat_g")
+  loggedVia     LoggedVia  @map("logged_via")
+  aiRawInput    String?    @map("ai_raw_input")
+  createdAt     DateTime   @default(now()) @map("created_at")
+  items         MealItem[]
+
+  @@index([userId, loggedAt])
+  @@map("meals")
+}
+
+model MealItem {
+  id             String   @id @default(uuid())
+  mealId         String   @map("meal_id")
+  meal           Meal     @relation(fields: [mealId], references: [id], onDelete: Cascade)
+  foodName       String   @map("food_name")
+  servingSizeG   Float    @default(100.0) @map("serving_size_g")
+  calories       Float    @default(0.0)
+  proteinG       Float    @default(0.0) @map("protein_g")
+  carbsG         Float    @default(0.0) @map("carbs_g")
+  fatG           Float    @default(0.0) @map("fat_g")
+  micronutrients Json     @default("{}")
+  sourceProvider String   @default("internal") @map("source_provider")
+  externalFoodId String?  @map("external_food_id")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@map("meal_items")
+}
+
+model FoodCache {
+  externalId       String   @id @map("external_id")
+  sourceProvider   String   @map("source_provider")
+  barcode          String?  @unique
+  foodName         String   @map("food_name")
+  standardizedData Json     @map("standardized_data")
+  cachedAt         DateTime @default(now()) @map("cached_at")
+
+  @@map("food_cache")
+}
+
+model BitecoinLedger {
+  id              String          @id @default(uuid())
+  userId          String          @map("user_id")
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount          Int
+  transactionType TransactionType @map("transaction_type")
+  status          LedgerStatus    @default(COMPLETED)
+  referenceType   String?         @map("reference_type")
+  referenceId     String?         @map("reference_id")
+  metadata        Json            @default("{}")
+  createdAt       DateTime        @default(now()) @map("created_at")
+
+  @@unique([userId, referenceType, referenceId, transactionType], name: "uq_ledger_idempotency")
+  @@index([userId, status, createdAt])
+  @@map("bitecoin_ledger")
+}
+
+model Referral {
+  id                String         @id @default(uuid())
+  referrerId        String         @map("referrer_id")
+  referrer          User           @relation("ReferrerRelation", fields: [referrerId], references: [id], onDelete: Cascade)
+  refereeId         String         @unique @map("referee_id")
+  referee           User           @relation("RefereeRelation", fields: [refereeId], references: [id], onDelete: Cascade)
+  status            ReferralStatus @default(PENDING)
+  rewardCoins       Int            @default(50) @map("reward_coins")
+  deviceFingerprint String?        @map("device_fingerprint")
+  ipHash            String?        @map("ip_hash")
+  createdAt         DateTime       @default(now()) @map("created_at")
+  verifiedAt        DateTime?      @map("verified_at")
+
+  @@map("referrals")
+}
+
+model Reward {
+  id             String       @id @default(uuid())
+  title          String
+  description    String
+  bitecoinCost   Int          @map("bitecoin_cost")
+  rewardCategory String       @map("reward_category")
+  payload        Json         @default("{}")
+  isActive       Boolean      @default(true) @map("is_active")
+  userRewards    UserReward[]
+
+  @@map("rewards")
+}
+
+model UserReward {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rewardId     String   @map("reward_id")
+  reward       Reward   @relation(fields: [rewardId], references: [id], onDelete: Cascade)
+  redeemedAt   DateTime @default(now()) @map("redeemed_at")
+  redeemStatus String   @default("active") @map("redeem_status")
+
+  @@map("user_rewards")
+}
