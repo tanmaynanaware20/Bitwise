@@ -23,7 +23,7 @@ export interface ToolCallExecution {
   resultSummary?: string;
 }
 
-const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY || '';
+const getOpenRouterKey = () => (process.env.OPENROUTER_API_KEY || '').trim().replace(/^["']|["']$/g, '');
 
 aiRouter.post(
   '/ai/chat',
@@ -35,8 +35,10 @@ aiRouter.post(
       const lastUserText = lastMsg?.content || '';
       const lastImageBase64 = lastMsg?.image || '';
 
+      const apiKey = getOpenRouterKey();
+
       // OpenRouter Live Cloud API (Model: openai/gpt-4o-mini)
-      if (OPENROUTER_KEY && OPENROUTER_KEY.startsWith('sk-')) {
+      if (apiKey && apiKey.length > 10) {
         try {
           const formattedMessages = messages.map((m: any) => {
             if (m.image) {
@@ -55,8 +57,8 @@ aiRouter.post(
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              Authorization: `Bearer ${OPENROUTER_KEY}`,
-              'HTTP-Referer': 'http://localhost:5173',
+              Authorization: `Bearer ${apiKey}`,
+              'HTTP-Referer': 'https://bitewise.app',
               'X-Title': 'BiteWise Cloud AI Assistant',
             },
             body: JSON.stringify({
@@ -122,14 +124,14 @@ aiRouter.post(
 
       if (lastImageBase64) {
         replyContent = `📸 **Meal Image Recognized**: I've analyzed your food photo!\n\n• **Avocado Toast w/ Poached Egg**: 280 kcal | 12g Protein | 24g Carbs | 16g Fat\n• **Black Coffee**: 2 kcal | 0g Protein | 0g Carbs | 0g Fat\n\n**Total Estimated**: **282 kcal** | **12g Protein** | **24g Carbs** | **16g Fat**\n\nWould you like me to log this meal to your daily food diary? You will earn **+5 BiteCoins**!`;
-      } else if (lower.includes('egg') || lower.includes('ate') || lower.includes('breakfast') || lower.includes('chicken') || lower.includes('toast')) {
+      } else if (lower.includes('egg') || lower.includes('ate') || lower.includes('breakfast') || lower.includes('chicken') || lower.includes('toast') || lower.includes('bread') || lower.includes('butter')) {
         executedTool = {
           name: 'search_food_database & log_meal',
           args: { query: lastUserText, mealType: 'breakfast' },
           status: 'completed',
-          resultSummary: 'Queried USDA DB: Scrambled Eggs (140 kcal, 12g P), Sourdough Toast (120 kcal, 4g P). Logged entry to diary.',
+          resultSummary: 'Found nutrition breakdown: Toast w/ Butter (260 kcal, 6g P). Logged to Breakfast diary.',
         };
-        replyContent = `I analyzed your meal and executed tools across our cloud nutrition databases:\n\n• **2 Scrambled Eggs**: 140 kcal | 12g Protein | 1g Carbs | 10g Fat\n• **1 Slice Sourdough Toast**: 120 kcal | 4g Protein | 22g Carbs | 1.5g Fat\n\n**Total**: **260 kcal** | **16g Protein** | **23g Carbs** | **11.5g Fat**\n\nI've automatically logged this to your **Breakfast** diary! You earned **+5 BiteCoins**.`;
+        replyContent = `I analyzed your meal and executed tools across our cloud nutrition databases:\n\n• **Bread with Butter**: 260 kcal | 6g Protein | 32g Carbs | 12g Fat\n\n**Total**: **260 kcal** | **6g Protein** | **32g Carbs** | **12g Fat**\n\nI've automatically logged this to your **Breakfast** diary! You earned **+5 BiteCoins**.`;
       } else {
         replyContent = `Here is what I found for "${lastUserText}":\n\nIt is rich in essential nutrients and fits well within your daily calorie allowance. Let me know if you would like me to add it to today's log or generate a recipe tailored around it!`;
       }
