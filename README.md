@@ -10,11 +10,11 @@ Built with **React, TypeScript, Node.js, Express, PostgreSQL, Prisma, and OpenRo
 
 ## 🚀 Live Demo
 
-🌐 **Frontend:** [BiteWise Live App](https://bitewise.vercel.app/?utm_source=chatgpt.com)
+🌐 **Frontend:** [BiteWise Live App](https://bitwise-kappa.vercel.app/)
 
-⚙️ **Backend Health API:** [BiteWise Backend API](https://bitewise-backend-kpqn.onrender.com/api/v1/health?utm_source=chatgpt.com)
+⚙️ **Backend Health API:** [BiteWise Backend API](https://bitewise-backend-kpqn.onrender.com/api/v1/health)
 
-📦 **GitHub Repository:** [BiteWise GitHub Repository](https://github.com/tanmaynanaware20/Bitwise?utm_source=chatgpt.com)
+📦 **GitHub Repository:** [BiteWise GitHub Repository](https://github.com/tanmaynanaware20/Bitwise)
 
 ---
 
